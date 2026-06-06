@@ -18,6 +18,7 @@
     { "src": "/auth/(.*)", "dest": "api/index.py" },
     { "src": "/profile/(.*)", "dest": "api/index.py" },
     { "src": "/matches", "dest": "api/index.py" },
-    { "src": "/(.*)", "dest": "/frontend/build/$1" }
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/frontend/build/index.html" }
   ]
 }
