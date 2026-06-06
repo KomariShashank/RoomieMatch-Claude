@@ -13,13 +13,11 @@
       "use": "@vercel/python"
     }
   ],
-  "outputDirectory": "frontend/build",
   "routes": [
     { "src": "/health", "dest": "api/index.py" },
     { "src": "/auth/(.*)", "dest": "api/index.py" },
     { "src": "/profile/(.*)", "dest": "api/index.py" },
     { "src": "/matches", "dest": "api/index.py" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/frontend/build/index.html" }
+    { "src": "/(.*)", "dest": "/frontend/build/$1" }
   ]
 }
