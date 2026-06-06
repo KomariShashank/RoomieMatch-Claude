@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 function Matches({ matches: initialMatches, onBack, onLogout, onConnect }) {
-  const { access_token, logout } = useAuth();
+  const { access_token } = useAuth();
   const [matches] = useState(initialMatches || []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [action, setAction] = useState(null);
