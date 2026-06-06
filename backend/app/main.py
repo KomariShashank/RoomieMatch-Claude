@@ -4,10 +4,12 @@ Provides health check endpoint and connects to Supabase database.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import initialize_database
 from app.config import FRONTEND_ORIGIN
+from app.models import SignupRequest, LoginRequest, AuthResponse
+from app.supabase_auth import signup_user, login_user
 
 
 @asynccontextmanager
@@ -66,3 +68,41 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs"
     }
+
+
+@app.post("/auth/signup", response_model=AuthResponse)
+async def signup(request: SignupRequest):
+    """
+    Create a new user account.
+    Creates user in Supabase Auth and profile in database.
+    
+    # In production verify tokens with Supabase JWT
+    """
+    try:
+        result = await signup_user(
+            email=request.email,
+            password=request.password,
+            full_name=request.full_name,
+            age=request.age
+        )
+        return AuthResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(request: LoginRequest):
+    """
+    Authenticate an existing user.
+    Returns access token for authenticated requests.
+    
+    # In production verify tokens with Supabase JWT
+    """
+    try:
+        result = await login_user(
+            email=request.email,
+            password=request.password
+        )
+        return AuthResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
