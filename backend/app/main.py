@@ -10,6 +10,7 @@ from app.database import initialize_database
 from app.config import FRONTEND_ORIGIN
 from app.models import SignupRequest, LoginRequest, AuthResponse
 from app.supabase_auth import signup_user, login_user
+from app.profile_routes import router as profile_router
 
 
 @asynccontextmanager
@@ -45,6 +46,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+# Include profile and matching routes
+app.include_router(profile_router)
 
 
 @app.get("/health")

@@ -34,3 +34,46 @@ class AuthResponse(BaseModel):
     access_token: str
     user_id: str
     full_name: str
+
+
+class HabitsRequest(BaseModel):
+    """
+    Request model for updating user habit preferences.
+    """
+    cleanliness_level: int
+    sleep_schedule: str
+    smoking: bool
+    drinking: bool
+    social_level: int
+
+
+class ProfileResponse(BaseModel):
+    """
+    Response model for user profile data.
+    Returns all profile information.
+    """
+    id: str
+    created_at: str
+    email: str | None
+    full_name: str | None
+    age: int | None
+    cleanliness_level: int | None
+    sleep_schedule: str | None
+    smoking: bool | None
+    drinking: bool | None
+    social_level: int | None
+
+
+class MatchResponse(BaseModel):
+    """
+    Response model for roommate matches.
+    Returns match information with compatibility score.
+    """
+    full_name: str
+    age: int
+    score: int
+    cleanliness_level: int
+    sleep_schedule: str
+    smoking: bool
+    drinking: bool
+    social_level: int
