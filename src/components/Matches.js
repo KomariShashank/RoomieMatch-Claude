@@ -1,80 +1,20 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-function Matches({ userData, onBack, onConnect }) {
-  // All available matches
-  const allMatches = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      age: 26,
-      budget: 1200,
-      location: 'Downtown',
-      cleanliness: 8,
-      sleepSchedule: 'moderate',
-      smoking: 'no',
-      drinking: 'socially',
-      socialLevel: 7,
-      matchScore: 92
-    },
-    {
-      id: 2,
-      name: 'Mike Chen',
-      age: 24,
-      budget: 1000,
-      location: 'Suburbs',
-      cleanliness: 6,
-      sleepSchedule: 'night',
-      smoking: 'no',
-      drinking: 'socially',
-      socialLevel: 8,
-      matchScore: 85
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      age: 28,
-      budget: 1500,
-      location: 'Downtown',
-      cleanliness: 9,
-      sleepSchedule: 'early',
-      smoking: 'no',
-      drinking: 'no',
-      socialLevel: 5,
-      matchScore: 78
-    },
-    {
-      id: 4,
-      name: 'Alex Thompson',
-      age: 25,
-      budget: 1100,
-      location: 'Midtown',
-      cleanliness: 7,
-      sleepSchedule: 'moderate',
-      smoking: 'no',
-      drinking: 'socially',
-      socialLevel: 6,
-      matchScore: 88
-    },
-    {
-      id: 5,
-      name: 'Jessica Lee',
-      age: 27,
-      budget: 1300,
-      location: 'Downtown',
-      cleanliness: 9,
-      sleepSchedule: 'early',
-      smoking: 'no',
-      drinking: 'no',
-      socialLevel: 4,
-      matchScore: 81
-    }
-  ];
-
+function Matches({ matches: initialMatches, onBack, onLogout, onConnect }) {
+  const { access_token, logout } = useAuth();
+  const [matches] = useState(initialMatches || []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [action, setAction] = useState(null);
+  const [loading] = useState(false);
+  const [error] = useState('');
 
-  const currentMatch = allMatches[currentIndex];
-  const hasMoreMatches = currentIndex < allMatches.length;
+  console.log('🎯 Matches component loaded');
+  console.log('🔑 Token:', access_token ? 'Token exists' : 'NO TOKEN!');
+  console.log('📊 Matches received:', matches);
+
+  const currentMatch = matches[currentIndex];
+  const hasMoreMatches = currentIndex < matches.length;
 
   const handleAction = (actionType, match) => {
     setAction(actionType);
@@ -94,31 +34,61 @@ function Matches({ userData, onBack, onConnect }) {
   };
 
   const getSleepScheduleLabel = (schedule) => {
-    const labels = {
-      early: 'Early Bird',
-      moderate: 'Moderate',
-      night: 'Night Owl'
-    };
-    return labels[schedule] || schedule;
+    // Backend returns: "Early bird", "Flexible", "Night owl"
+    return schedule || 'Not specified';
   };
 
   const getSmokingLabel = (smoking) => {
-    const labels = {
-      no: 'Non-smoker',
-      occasionally: 'Occasional smoker',
-      yes: 'Smoker'
-    };
-    return labels[smoking] || smoking;
+    // Backend returns boolean: true or false
+    if (typeof smoking === 'boolean') {
+      return smoking ? 'Smoker' : 'Non-smoker';
+    }
+    return 'Not specified';
   };
 
   const getDrinkingLabel = (drinking) => {
-    const labels = {
-      no: 'Non-drinker',
-      socially: 'Social drinker',
-      regularly: 'Regular drinker'
-    };
-    return labels[drinking] || drinking;
+    // Backend returns boolean: true or false
+    if (typeof drinking === 'boolean') {
+      return drinking ? 'Drinks' : 'Non-drinker';
+    }
+    return 'Not specified';
   };
+
+  if (loading) {
+    return (
+      <div className="screen-container matches-container">
+        <div className="screen-header">
+          <h1>Your Matches</h1>
+          <p>Loading your matches...</p>
+        </div>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <div className="loading-spinner">⏳</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="screen-container matches-container">
+        <div className="screen-header">
+          <h1>Your Matches</h1>
+          <p>Error loading matches</p>
+        </div>
+        <div style={{ color: 'red', textAlign: 'center', padding: '2rem' }}>
+          {error}
+        </div>
+        <div className="button-group">
+          <button className="btn btn-secondary" onClick={onBack}>
+            Back to Preferences
+          </button>
+          <button className="btn btn-secondary" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen-container matches-container">
@@ -136,26 +106,24 @@ function Matches({ userData, onBack, onConnect }) {
       ) : (
         <div className="match-card">
           <div className="match-header">
-            <div className="match-avatar">{currentMatch.name.charAt(0)}</div>
+            <div className="match-avatar">{currentMatch.full_name.charAt(0)}</div>
             <div className="match-header-content">
-              <div className="match-name">{currentMatch.name}</div>
-              <div className="match-score">{currentMatch.matchScore}% Match</div>
+              <div className="match-name">{currentMatch.full_name}</div>
+              <div className="match-score">{currentMatch.score}% Match</div>
             </div>
           </div>
 
           <div className="match-counter">
-            Profile {currentIndex + 1} of {allMatches.length}
+            Profile {currentIndex + 1} of {matches.length}
           </div>
 
           <div className="match-info">
             <p><strong>Age:</strong> {currentMatch.age}</p>
-            <p><strong>Budget:</strong> ${currentMatch.budget}/month</p>
-            <p><strong>Location:</strong> {currentMatch.location}</p>
-            <p><strong>Cleanliness:</strong> {currentMatch.cleanliness}/10</p>
-            <p><strong>Sleep Schedule:</strong> {getSleepScheduleLabel(currentMatch.sleepSchedule)}</p>
+            <p><strong>Cleanliness:</strong> {currentMatch.cleanliness_level}/10</p>
+            <p><strong>Sleep Schedule:</strong> {getSleepScheduleLabel(currentMatch.sleep_schedule)}</p>
             <p><strong>Smoking:</strong> {getSmokingLabel(currentMatch.smoking)}</p>
             <p><strong>Drinking:</strong> {getDrinkingLabel(currentMatch.drinking)}</p>
-            <p><strong>Social Level:</strong> {currentMatch.socialLevel}/10</p>
+            <p><strong>Social Level:</strong> {currentMatch.social_level}/10</p>
           </div>
 
           {!action ? (
@@ -176,8 +144,8 @@ function Matches({ userData, onBack, onConnect }) {
           ) : (
             <div className={`action-message ${action}`}>
               {action === 'liked' 
-                ? `✓ You liked ${currentMatch.name}! Connecting...`
-                : `✗ You passed on ${currentMatch.name}.`
+                ? `✓ You liked ${currentMatch.full_name}! Connecting...`
+                : `✗ You passed on ${currentMatch.full_name}.`
               }
             </div>
           )}
@@ -187,6 +155,9 @@ function Matches({ userData, onBack, onConnect }) {
       <div className="button-group">
         <button className="btn btn-secondary" onClick={onBack}>
           Back to Preferences
+        </button>
+        <button className="btn btn-secondary" onClick={onLogout}>
+          Logout
         </button>
       </div>
     </div>

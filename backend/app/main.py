@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import initialize_database
-from app.config import FRONTEND_ORIGIN
 from app.models import SignupRequest, LoginRequest, AuthResponse
 from app.supabase_auth import signup_user, login_user
 from app.profile_routes import router as profile_router
@@ -41,10 +40,14 @@ app = FastAPI(
 # Configure CORS middleware to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN],  # Frontend origin from .env
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include profile and matching routes

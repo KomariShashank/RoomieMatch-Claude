@@ -4,30 +4,24 @@ function ConnectRoommate({ match, onBack, onChat }) {
   const [showCallPopup, setShowCallPopup] = useState(false);
   const phoneNumber = '(555) 123-4567';
   const getSleepScheduleLabel = (schedule) => {
-    const labels = {
-      early: 'Early Bird',
-      moderate: 'Moderate',
-      night: 'Night Owl'
-    };
-    return labels[schedule] || schedule;
+    // Backend returns: "Early bird", "Flexible", "Night owl"
+    return schedule || 'Not specified';
   };
 
   const getSmokingLabel = (smoking) => {
-    const labels = {
-      no: 'Non-smoker',
-      occasionally: 'Occasional smoker',
-      yes: 'Smoker'
-    };
-    return labels[smoking] || smoking;
+    // Backend returns boolean: true or false
+    if (typeof smoking === 'boolean') {
+      return smoking ? 'Smoker' : 'Non-smoker';
+    }
+    return 'Not specified';
   };
 
   const getDrinkingLabel = (drinking) => {
-    const labels = {
-      no: 'Non-drinker',
-      socially: 'Social drinker',
-      regularly: 'Regular drinker'
-    };
-    return labels[drinking] || drinking;
+    // Backend returns boolean: true or false
+    if (typeof drinking === 'boolean') {
+      return drinking ? 'Drinks' : 'Non-drinker';
+    }
+    return 'Not specified';
   };
 
   return (
@@ -40,16 +34,15 @@ function ConnectRoommate({ match, onBack, onChat }) {
       <div className="connect-profile">
         <div className="profile-photo">
           <div className="profile-placeholder">
-            {match.name.charAt(0)}
+            {match.full_name.charAt(0)}
           </div>
         </div>
 
         <div className="profile-details">
-          <h2>{match.name}</h2>
+          <h2>{match.full_name}</h2>
           <div className="profile-basic-info">
             <span className="info-badge">👤 {match.age} years old</span>
-            <span className="info-badge">💰 ${match.budget}/month</span>
-            <span className="info-badge">📍 {match.location}</span>
+            <span className="info-badge">🎯 {match.score}% Compatible</span>
           </div>
         </div>
 
@@ -60,14 +53,14 @@ function ConnectRoommate({ match, onBack, onChat }) {
               <span className="summary-icon">✨</span>
               <div className="summary-content">
                 <strong>Cleanliness</strong>
-                <p>{match.cleanliness}/10</p>
+                <p>{match.cleanliness_level}/10</p>
               </div>
             </div>
             <div className="summary-item">
               <span className="summary-icon">🌙</span>
               <div className="summary-content">
                 <strong>Sleep Schedule</strong>
-                <p>{getSleepScheduleLabel(match.sleepSchedule)}</p>
+                <p>{getSleepScheduleLabel(match.sleep_schedule)}</p>
               </div>
             </div>
             <div className="summary-item">
@@ -88,7 +81,7 @@ function ConnectRoommate({ match, onBack, onChat }) {
               <span className="summary-icon">👥</span>
               <div className="summary-content">
                 <strong>Social Level</strong>
-                <p>{match.socialLevel}/10</p>
+                <p>{match.social_level}/10</p>
               </div>
             </div>
           </div>
@@ -109,7 +102,7 @@ function ConnectRoommate({ match, onBack, onChat }) {
               <div className="call-icon">📞</div>
               <h3>Calling...</h3>
               <p className="call-number">{phoneNumber}</p>
-              <p className="call-name">{match.name}</p>
+              <p className="call-name">{match.full_name}</p>
               <button className="btn btn-end-call" onClick={() => setShowCallPopup(false)}>
                 End Call
               </button>

@@ -39,9 +39,9 @@ function ChatScreen({ match, onBack }) {
           ← Back
         </button>
         <div className="chat-header-info">
-          <div className="chat-avatar">{match.name.charAt(0)}</div>
+          <div className="chat-avatar">{match.full_name.charAt(0)}</div>
           <div className="chat-header-text">
-            <h2>{match.name}</h2>
+            <h2>{match.full_name}</h2>
             <span className="online-status">● Online</span>
           </div>
         </div>

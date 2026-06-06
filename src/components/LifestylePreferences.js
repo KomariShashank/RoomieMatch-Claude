@@ -1,13 +1,123 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
+const API_URL = process.env.REACT_APP_API_URL;
+
+function LifestylePreferences({ onNext, onBack }) {
+  const { access_token, user_id, logout } = useAuth();
+  const [formData, setFormData] = useState({
+    cleanliness: 5,
+    sleepSchedule: 'moderate',
+    smoking: 'no',
+    drinking: 'socially',
+    socialLevel: 5
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (field, value) => {
-    updateUserData({ [field]: value });
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // Mapping functions to convert frontend values to backend format
+  const mapSleepSchedule = (schedule) => {
+    const mapping = {
+      'early': 'Early bird',
+      'moderate': 'Flexible',
+      'night': 'Night owl'
+    };
+    return mapping[schedule] || schedule;
+  };
+
+  const mapSmoking = (smoking) => {
+    // 'no' -> false, 'occasionally' -> true, 'yes' -> true
+    return smoking !== 'no';
+  };
+
+  const mapDrinking = (drinking) => {
+    // 'no' -> false, 'socially' -> true, 'regularly' -> true
+    return drinking !== 'no';
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onNext();
+    setError('');
+    setLoading(true);
+
+    console.log('🔑 Token being used:', access_token ? 'Token exists' : 'NO TOKEN!');
+    console.log('👤 User ID:', user_id);
+    console.log('📝 Form data (frontend):', formData);
+
+    // Map frontend values to backend format
+    const mappedData = {
+      cleanliness_level: formData.cleanliness,
+      sleep_schedule: mapSleepSchedule(formData.sleepSchedule),
+      smoking: mapSmoking(formData.smoking),
+      drinking: mapDrinking(formData.drinking),
+      social_level: formData.socialLevel
+    };
+
+    console.log('🔄 Mapped data (backend format):', mappedData);
+
+    try {
+      // Step 1: Save habits to backend
+      console.log('📤 Calling POST /profile/habits...');
+      const habitsResponse = await fetch(`${API_URL}/profile/habits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${access_token}`
+        },
+        body: JSON.stringify(mappedData),
+      });
+
+      console.log('📥 Habits response status:', habitsResponse.status);
+
+      if (!habitsResponse.ok) {
+        const errorData = await habitsResponse.json();
+        console.error('❌ Habits error:', errorData);
+        if (habitsResponse.status === 401) {
+          logout();
+          throw new Error('Session expired. Please login again.');
+        }
+        throw new Error(errorData.detail || 'Failed to save preferences');
+      }
+
+      const habitsData = await habitsResponse.json();
+      console.log('✅ Habits saved:', habitsData);
+
+      // Step 2: Fetch matches from backend
+      console.log('📤 Calling GET /matches...');
+      const matchesResponse = await fetch(`${API_URL}/matches`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      });
+
+      console.log('📥 Matches response status:', matchesResponse.status);
+
+      if (!matchesResponse.ok) {
+        const errorData = await matchesResponse.json();
+        console.error('❌ Matches error:', errorData);
+        if (matchesResponse.status === 401) {
+          logout();
+          throw new Error('Session expired. Please login again.');
+        }
+        throw new Error(errorData.detail || 'Failed to fetch matches');
+      }
+
+      const matchesData = await matchesResponse.json();
+      console.log('✅ Matches fetched:', matchesData);
+
+      // Navigate to matches screen with the fetched matches
+      onNext(matchesData);
+    } catch (err) {
+      console.error('💥 Error in handleSubmit:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,14 +152,14 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Cleanliness Level: {userData.cleanliness}/10</label>
+          <label>Cleanliness Level: {formData.cleanliness}/10</label>
           <div className="slider-container">
             <input
               type="range"
               className="slider"
               min="1"
               max="10"
-              value={userData.cleanliness}
+              value={formData.cleanliness}
               onChange={(e) => handleChange('cleanliness', parseInt(e.target.value))}
             />
             <div className="slider-labels">
@@ -68,7 +178,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="early"
                 name="sleepSchedule"
                 value="early"
-                checked={userData.sleepSchedule === 'early'}
+                checked={formData.sleepSchedule === 'early'}
                 onChange={(e) => handleChange('sleepSchedule', e.target.value)}
               />
               <label htmlFor="early">Early Bird</label>
@@ -79,7 +189,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="moderate"
                 name="sleepSchedule"
                 value="moderate"
-                checked={userData.sleepSchedule === 'moderate'}
+                checked={formData.sleepSchedule === 'moderate'}
                 onChange={(e) => handleChange('sleepSchedule', e.target.value)}
               />
               <label htmlFor="moderate">Moderate</label>
@@ -90,7 +200,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="night"
                 name="sleepSchedule"
                 value="night"
-                checked={userData.sleepSchedule === 'night'}
+                checked={formData.sleepSchedule === 'night'}
                 onChange={(e) => handleChange('sleepSchedule', e.target.value)}
               />
               <label htmlFor="night">Night Owl</label>
@@ -107,7 +217,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="smoking-no"
                 name="smoking"
                 value="no"
-                checked={userData.smoking === 'no'}
+                checked={formData.smoking === 'no'}
                 onChange={(e) => handleChange('smoking', e.target.value)}
               />
               <label htmlFor="smoking-no">No</label>
@@ -118,7 +228,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="smoking-occasionally"
                 name="smoking"
                 value="occasionally"
-                checked={userData.smoking === 'occasionally'}
+                checked={formData.smoking === 'occasionally'}
                 onChange={(e) => handleChange('smoking', e.target.value)}
               />
               <label htmlFor="smoking-occasionally">Occasionally</label>
@@ -129,7 +239,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="smoking-yes"
                 name="smoking"
                 value="yes"
-                checked={userData.smoking === 'yes'}
+                checked={formData.smoking === 'yes'}
                 onChange={(e) => handleChange('smoking', e.target.value)}
               />
               <label htmlFor="smoking-yes">Yes</label>
@@ -146,7 +256,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="drinking-no"
                 name="drinking"
                 value="no"
-                checked={userData.drinking === 'no'}
+                checked={formData.drinking === 'no'}
                 onChange={(e) => handleChange('drinking', e.target.value)}
               />
               <label htmlFor="drinking-no">No</label>
@@ -157,7 +267,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="drinking-socially"
                 name="drinking"
                 value="socially"
-                checked={userData.drinking === 'socially'}
+                checked={formData.drinking === 'socially'}
                 onChange={(e) => handleChange('drinking', e.target.value)}
               />
               <label htmlFor="drinking-socially">Socially</label>
@@ -168,7 +278,7 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
                 id="drinking-regularly"
                 name="drinking"
                 value="regularly"
-                checked={userData.drinking === 'regularly'}
+                checked={formData.drinking === 'regularly'}
                 onChange={(e) => handleChange('drinking', e.target.value)}
               />
               <label htmlFor="drinking-regularly">Regularly</label>
@@ -177,14 +287,14 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
         </div>
 
         <div className="form-group">
-          <label>Social Level: {userData.socialLevel}/10</label>
+          <label>Social Level: {formData.socialLevel}/10</label>
           <div className="slider-container">
             <input
               type="range"
               className="slider"
               min="1"
               max="10"
-              value={userData.socialLevel}
+              value={formData.socialLevel}
               onChange={(e) => handleChange('socialLevel', parseInt(e.target.value))}
             />
             <div className="slider-labels">
@@ -194,12 +304,18 @@ function LifestylePreferences({ userData, updateUserData, onNext, onBack }) {
           </div>
         </div>
 
+        {error && (
+          <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
+
         <div className="button-group">
-          <button type="button" className="btn btn-secondary" onClick={onBack}>
+          <button type="button" className="btn btn-secondary" onClick={onBack} disabled={loading}>
             Back
           </button>
-          <button type="submit" className="btn btn-primary">
-            Find Matches
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Saving...' : 'Find Matches'}
           </button>
         </div>
       </form>
