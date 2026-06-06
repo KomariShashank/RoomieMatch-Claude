@@ -13,6 +13,7 @@
       "use": "@vercel/python"
     }
   ],
+  "outputDirectory": "frontend/build",
   "routes": [
     { "src": "/health", "dest": "api/index.py" },
     { "src": "/auth/(.*)", "dest": "api/index.py" },
