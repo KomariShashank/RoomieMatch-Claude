@@ -6,7 +6,6 @@ Provides health check endpoint and connects to Supabase database.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import initialize_database
 from app.models import SignupRequest, LoginRequest, AuthResponse
 from app.supabase_auth import signup_user, login_user
 from app.profile_routes import router as profile_router
