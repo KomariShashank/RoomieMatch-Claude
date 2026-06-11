@@ -17,9 +17,9 @@
     { "src": "/auth/(.*)", "dest": "api/index.py" },
     { "src": "/profile/(.*)", "dest": "api/index.py" },
     { "src": "/matches", "dest": "api/index.py" },
-    { "src": "/static/(.*)", "dest": "/frontend/build/static/$1" },
-    { "src": "/(favicon.ico|manifest.json|asset-manifest.json|robots.txt|logo.*\\.png)", "dest": "/frontend/build/$1" },
+    { "src": "/static/(.*)", "dest": "/frontend/static/$1" },
+    { "src": "/(favicon.ico|manifest.json|asset-manifest.json|robots.txt|logo.*\\.png)", "dest": "/frontend/$1" },
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/frontend/build/index.html" }
+    { "src": "/(.*)", "dest": "/frontend/index.html" }
   ]
 }
