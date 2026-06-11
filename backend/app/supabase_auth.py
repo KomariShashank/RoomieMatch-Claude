@@ -4,8 +4,7 @@ Handles user signup and login via Supabase Auth API.
 """
 
 import httpx
-import psycopg2
-from app.config import SUPABASE_URL, SUPABASE_ANON_KEY, DATABASE_URL, DATABASE_PWD
+from app.config import SUPABASE_URL, SUPABASE_ANON_KEY
 
 
 def get_supabase_base_url():
@@ -85,31 +84,30 @@ async def signup_user(email: str, password: str, full_name: str, age: int):
         raise Exception(f"Invalid response from Supabase signup. Response data: {data}")
     
     # Insert profile into database
+    # Insert profile into database via Supabase REST API
     try:
-        # Connect to database
-        connection_string = DATABASE_URL.replace("[YOUR-PASSWORD]", DATABASE_PWD)
-        conn = psycopg2.connect(connection_string)
-        cursor = conn.cursor()
-        
-        # Insert profile row
-        insert_query = """
-        INSERT INTO profiles (id, email, full_name, age)
-        VALUES (%s, %s, %s, %s)
-        """
-        cursor.execute(insert_query, (user_id, email, full_name, age))
-        conn.commit()
-        
+        profile_url = f"{base_url}/rest/v1/profiles"
+        profile_headers = {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        }
+        profile_body = {
+            "id": user_id,
+            "email": email,
+            "full_name": full_name,
+            "age": age
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(profile_url, json=profile_body, headers=profile_headers)
+            if resp.status_code not in (200, 201, 204):
+                print(f"Error creating profile: {resp.status_code} {resp.text}")
+                raise Exception(f"Profile creation failed: {resp.text}")
         print(f"✓ Profile created for user: {email}")
-        
-        # Clean up
-        cursor.close()
-        conn.close()
-        
     except Exception as e:
         print(f"Error creating profile: {e}")
         raise Exception(f"Profile creation failed: {e}")
-    
-    # Return authentication response
     return {
         "access_token": access_token,
         "user_id": user_id,
