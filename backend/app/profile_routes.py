@@ -14,15 +14,18 @@ from supabase import create_client
 router = APIRouter()
 
 
-def get_supabase_client():
-    """Create and return a Supabase client."""
-    base_url = SUPABASE_URL.replace("/rest/v1/", "").rstrip("/")
-    return create_client(base_url, SUPABASE_ANON_KEY)
-
-
 def get_supabase_base_url():
     """Extract the base Supabase URL."""
     return SUPABASE_URL.replace("/rest/v1/", "").rstrip("/")
+
+
+def get_supabase_client(token: str = None):
+    """Create and return a Supabase client with optional user token."""
+    base_url = get_supabase_base_url()
+    client = create_client(base_url, SUPABASE_ANON_KEY)
+    if token:
+        client.postgrest.auth(token)
+    return client
 
 
 async def get_current_user(authorization: str):
@@ -32,7 +35,7 @@ async def get_current_user(authorization: str):
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
-            status_code=401, 
+            status_code=401,
             detail="Missing or invalid authorization header"
         )
 
@@ -50,7 +53,7 @@ async def get_current_user(authorization: str):
 
         if response.status_code != 200:
             raise HTTPException(
-                status_code=401, 
+                status_code=401,
                 detail="Invalid or expired token"
             )
 
@@ -59,7 +62,7 @@ async def get_current_user(authorization: str):
 
         if not user_id:
             raise HTTPException(
-                status_code=401, 
+                status_code=401,
                 detail="Could not extract user ID from token"
             )
 
@@ -76,10 +79,11 @@ async def update_habits(
     # In production verify JWT properly
     """
     user_id = await get_current_user(authorization)
+    token = authorization.replace("Bearer ", "").strip()
 
     try:
-        supabase = get_supabase_client()
-        supabase.table("profiles").update({
+        supabase = get_supabase_client(token)
+        result = supabase.table("profiles").update({
             "cleanliness_level": request.cleanliness_level,
             "sleep_schedule": request.sleep_schedule,
             "smoking": request.smoking,
@@ -88,11 +92,12 @@ async def update_habits(
         }).eq("id", user_id).execute()
 
         print(f"✓ Habits updated for user: {user_id}")
+        print(f"✓ Result: {result}")
         return {"message": "Profile updated successfully"}
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to update profile: {e}"
         )
 
@@ -104,9 +109,10 @@ async def get_my_profile(authorization: str = Header(None)):
     # In production verify JWT properly
     """
     user_id = await get_current_user(authorization)
+    token = authorization.replace("Bearer ", "").strip()
 
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(token)
         response = supabase.table("profiles").select("*").eq(
             "id", user_id
         ).execute()
@@ -121,7 +127,7 @@ async def get_my_profile(authorization: str = Header(None)):
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to fetch profile: {e}"
         )
 
@@ -133,9 +139,10 @@ async def get_matches(authorization: str = Header(None)):
     # In production verify JWT properly
     """
     user_id = await get_current_user(authorization)
+    token = authorization.replace("Bearer ", "").strip()
 
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(token)
 
         # Get current user profile
         my_response = supabase.table("profiles").select("*").eq(
@@ -153,7 +160,9 @@ async def get_matches(authorization: str = Header(None)):
         me = my_response.data[0]
 
         # Get all other profiles with habits completed
-        others_response = supabase.table("profiles").select("*").neq(
+        # Use service role or anon for reading all profiles
+        supabase_anon = get_supabase_client()
+        others_response = supabase_anon.table("profiles").select("*").neq(
             "id", user_id
         ).not_.is_("cleanliness_level", "null").execute()
 

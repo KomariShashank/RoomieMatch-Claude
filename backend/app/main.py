@@ -16,16 +16,9 @@ from app.profile_routes import router as profile_router
 async def lifespan(app: FastAPI):
     """
     Lifespan context manager for FastAPI startup and shutdown events.
-    Initializes the database on startup.
     """
-    # Startup: Initialize database
     print("Starting up FastAPI application...")
-    initialize_database()
-    print("FastAPI application ready!")
-    
     yield
-    
-    # Shutdown: Clean up resources (if needed in future)
     print("Shutting down FastAPI application...")
 
 
